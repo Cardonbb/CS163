@@ -13,7 +13,7 @@ dash.register_page(__name__, path='/findings', name='Findings')
 
 EXPERIMENT_DATA = {
     "exp1": {
-        "label": "Experiment 1 — Baseline (CE loss, flips only)",
+        "label": "Experiment 1: Baseline (CE loss, flips only)",
         "rows": [
             # threshold, fault_iou, precision, recall, f1, miou, pixel_acc
             (0.50, 0.2762, 0.2964, 0.8016, 0.4328, 0.5317, 0.8032),
@@ -24,7 +24,7 @@ EXPERIMENT_DATA = {
         ],
     },
     "exp3": {
-        "label": "Experiment 3 — + Rotations (best)",
+        "label": "Experiment 3: + Rotations (best)",
         "rows": [
             (0.50, 0.5518, 0.6864, 0.7377, 0.7111, 0.7457, 0.9439),
             (0.65, 0.5523, 0.7127, 0.7104, 0.7116, 0.7473, 0.9461),
@@ -56,34 +56,58 @@ def _experiment_df(key):
 # ---------------------------------------------------------------------------
 
 HEADLINE = [
-    {"label": "TODO", "value": "—", "sub": "TODO"},
-    {"label": "TODO", "value": "—", "sub": "TODO"},
-    {"label": "TODO", "value": "—", "sub": "TODO"},
-    {"label": "TODO", "value": "—", "sub": "TODO"},
+    {"label": "Fault IoU", "value": "0.55", "sub": "Exp 3, threshold 0.65"},
+    {"label": "F1 (fault)", "value": "0.71", "sub": "Balanced precision and recall"},
+    {"label": "Boundary mIoU", "value": "0.23", "sub": "Up from 0.05 at baseline"},
+    {"label": "mIoU", "value": "0.75", "sub": "Mean of fault and background"},
 ]
 
 OVERVIEW_MD = """
-TODO
+We ran three experiments. The baseline worked but painted blobs. The second attempt
+changed too many things at once and got worse. The third experiment changed only
+one thing (rotation augmentation) and gave the largest jump in the project. The
+takeaway was to change one variable at a time.
 """
 
 EXP1_MD = """
-TODO
+Cross-entropy loss with class weights of 1.0 and 8.0, horizontal and vertical flips
+only. Recall hit 0.80 right away, but precision was just 0.30, so for every real
+fault pixel the model also flagged about two false positives. Tuning the threshold
+to 0.75 helped, landing at a Fault IoU of 0.33. The predictions still looked like
+wide blobs instead of narrow traces, which showed up as a Boundary mIoU of 0.05.
 """
 
 EXP2_MD = """
-TODO
+We tried to fix everything at once. Added Dice loss, raised the fault class weight
+to 15, added rotations, and dropped the batch size to 8 because Dice pushed us past
+the GPU memory limit. The first run collapsed and predicted zero fault pixels. The
+second run trained all 80 epochs but never converged, ending at a Fault IoU of 0.19.
+Worse than the baseline. Lesson: changing four things at once means you cannot tell
+which one broke it.
 """
 
 EXP3_MD = """
-TODO
+We went back to the baseline config and added one thing: 90, 180, and 270 degree
+rotations. Faults run at every angle, so showing the model only flips left most
+orientations underrepresented. This single change moved Fault IoU from 0.33 to 0.55
+and Boundary mIoU from 0.05 to 0.23, which means the predictions are actually
+following linear traces now. Precision and recall came in nearly equal at 0.71,
+which is the operating point we wanted.
 """
 
 LIMITATIONS_MD = """
-TODO
+Coverage is small. About 300 km squared labeled across three regions out of
+California's 423,000 km squared, so generalization to new terrain is not yet
+validated. Labels carry positional uncertainty from the USGS database, partly
+softened by the 50 m buffer. We use optical imagery only, so roads, shorelines,
+and field boundaries can look like faults. No elevation data yet.
 """
 
 FUTURE_MD = """
-TODO
+Experiment 4 will add Dice loss back at a small weight (0.1) on top of the
+Experiment 3 config. The goal is tighter predictions without breaking training.
+If that does not help, Experiment 5 will run for 120 epochs since the best
+Experiment 3 checkpoint was still improving at epoch 77.
 """
 
 
@@ -166,7 +190,7 @@ def update_sweep(exp_key, threshold):
                   annotation_text=f"threshold = {threshold:.2f}",
                   annotation_position="top")
     fig.update_layout(
-        title=f"{EXPERIMENT_DATA[exp_key]['label']} — metrics vs threshold",
+        title=f"{EXPERIMENT_DATA[exp_key]['label']}: metrics vs threshold",
         xaxis_title="Classification threshold",
         yaxis_title="Metric value",
         yaxis=dict(range=[0, 1]),
@@ -213,14 +237,14 @@ layout = dbc.Container([
         dcc.Markdown(
             "Pick an experiment and slide the classification threshold to see "
             "how each metric shifts. Cross-entropy gives every pixel a fault "
-            "probability — the threshold is what we call 'fault' vs 'background.'"
+            "probability, and the threshold is what we call 'fault' versus 'background.'"
         ),
         interactive,
     ])),
 
-    _section("Experiment 1 — Baseline", dcc.Markdown(EXP1_MD)),
-    _section("Experiment 2 — Failed Run", dcc.Markdown(EXP2_MD)),
-    _section("Experiment 3 — Rotation Augmentation (Best)", dcc.Markdown(EXP3_MD)),
+    _section("Experiment 1: Baseline", dcc.Markdown(EXP1_MD)),
+    _section("Experiment 2: Failed Run", dcc.Markdown(EXP2_MD)),
+    _section("Experiment 3: Rotation Augmentation (Best)", dcc.Markdown(EXP3_MD)),
 
     _section("Limitations", dcc.Markdown(LIMITATIONS_MD)),
 

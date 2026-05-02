@@ -6,46 +6,52 @@ dash.register_page(__name__, path='/objectives', name='Objectives')
 
 
 PROJECT_GOAL_MD = """
-TODO
+Build a model that takes a Sentinel-2 image and returns a per-pixel prediction of
+whether each pixel sits on an active fault. The point is to help geologists narrow
+down where to look in the field, not replace them.
 """
 
 BROADER_IMPACT_MD = """
-TODO
+California has more than 15,000 km of mapped active faults, and the 2019 Ridgecrest
+earthquake happened on a fault that was not fully mapped beforehand. A faster
+screening tool means more candidate faults get a second look before the next
+earthquake reveals them.
 """
 
 RESEARCH_QUESTIONS = [
-    "TODO",
+    "Can a pretrained satellite foundation model learn fault signatures from a small labeled dataset?",
+    "Which augmentation matters most when fault traces run at every angle?",
+    "How well does a model trained on three California regions generalize to terrain it has never seen?",
 ]
 
 HYPOTHESES = [
-    "TODO",
+    "Rotation augmentation will outperform flips alone since faults have no preferred orientation.",
+    "Class-weighted cross entropy is enough to handle the 1.2 percent fault pixel imbalance.",
+    "Boundary mIoU will improve more than pixel accuracy as the model learns thin linear traces.",
 ]
 
 DATA_SOURCES = [
     {
         "name": "Sentinel-2",
-        "description": "10 m multispectral imagery (RGB + NIR + SWIR1/2). "
-                       "Median composite per region; SCL cloud mask; "
-                       "dry-season acquisition for rock/soil contrast.",
+        "description": "TODO",
         "url": "https://eos.com/find-satellite/sentinel-2/",
     },
     {
         "name": "NAIP",
-        "description": "1 m resolution aerial imagery. Planned for high-resolution "
-                       "validation passes — TODO confirm scope.",
+        "description": "TODO",
         "url": "https://naip-usdaonline.hub.arcgis.com/",
     },
     {
         "name": "USGS Quaternary Fault and Fold Database",
-        "description": "Vector fault traces filtered to active California "
-                       "segments; buffered 50 m and rasterized into binary masks.",
+        "description": "TODO",
         "url": "https://www.usgs.gov/programs/earthquake-hazards/faults",
     },
     # TODO: add LiDAR DEM source if/when integrated
 ]
 
 OUTCOMES_MD = """
-
+A working segmentation model with a published threshold sweep, plus per-region IoU
+so users can see where the predictions hold up and where they do not.
 """
 
 

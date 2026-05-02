@@ -7,18 +7,21 @@ dash.register_page(__name__, path='/', name='Home')
 # ---------------------------------------------------------------------------
 # HERO — edit the title / tagline here
 # ---------------------------------------------------------------------------
-HERO_TITLE = "TODO"
-HERO_TAGLINE = "TODO"
+HERO_TITLE = "Detecting Active Faults"
+HERO_TAGLINE = "Fine-tuning a satellite foundation model to map California earthquake faults."
 
 HEADLINE_METRICS = [
-    {"label": "TODO", "value": "—"},
-    {"label": "TODO", "value": "—"},
-    {"label": "TODO", "value": "—"},
-    {"label": "TODO", "value": "—"},
+    {"label": "Fault IoU", "value": "0.55"},
+    {"label": "F1 (fault)", "value": "0.71"},
+    {"label": "Recall", "value": "0.71"},
+    {"label": "Boundary mIoU", "value": "0.23"},
 ]
 
 SUMMARY_MD = """
-TODO
+California has thousands of mapped active faults and likely more that have not been
+found yet. We fine-tune Prithvi-EO-2.0, a 600M parameter satellite foundation model
+from NASA and IBM, to flag fault traces directly in Sentinel-2 imagery. Our best run
+reaches a Fault IoU of 0.55 with precision and recall both around 0.71.
 """
 
 # ---------------------------------------------------------------------------
