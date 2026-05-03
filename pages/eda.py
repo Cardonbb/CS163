@@ -190,14 +190,6 @@ layout = dbc.Container([
             "and what we did to keep the labels usable.",
             className="lead text-muted",
         ),
-        html.Div([
-            dbc.Badge(
-                f"Data source: {DATA_SOURCE.upper()}",
-                color="success" if DATA_SOURCE == "gcs" else "secondary",
-                className="me-2",
-            ),
-            html.Code(gcs_uri("dataset/")),
-        ], className="small mb-2"),
     ], className="py-4"),
 
     _section("Dataset Summary",
