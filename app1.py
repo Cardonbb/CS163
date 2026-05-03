@@ -11,7 +11,7 @@ app = Dash(
 server = app.server
 
 # Explicit page order so the navbar matches the rubric flow.
-NAV_ORDER = ["/", "/objectives", "/methods", "/findings"]
+NAV_ORDER = ["/", "/eda", "/methods", "/findings"]
 
 def _ordered_pages():
     by_path = {p["relative_path"]: p for p in dash.page_registry.values()}

@@ -1,59 +1,124 @@
+import json
+import os
+
 import dash
 from dash import html, dcc
 import dash_bootstrap_components as dbc
+import plotly.graph_objects as go
 
 dash.register_page(__name__, path='/', name='Home')
 
 # ---------------------------------------------------------------------------
-# HERO — edit the title / tagline here
+# Study regions — three California areas the model was trained / tested on.
+# ---------------------------------------------------------------------------
+STUDY_REGIONS = [
+    {"name": "Bay Area",      "lat": 37.55, "lon": -122.05,
+     "blurb": "Hayward & San Andreas traces"},
+    {"name": "Carrizo Plain", "lat": 35.18, "lon": -119.80,
+     "blurb": "Classic San Andreas exposure"},
+    {"name": "Mojave",        "lat": 34.70, "lon": -116.20,
+     "blurb": "Garlock & ECSZ faults"},
+]
+
+_FAULTS = {
+    "San Andreas": [(-122.85, 38.15), (-122.20, 37.55), (-121.55, 36.90),
+                    (-120.70, 36.10), (-119.85, 35.20), (-118.90, 34.65),
+                    (-117.40, 34.10), (-116.30, 33.75), (-115.80, 33.40)],
+    "Hayward":     [(-122.30, 38.05), (-122.10, 37.75), (-121.85, 37.45)],
+    # Garlock — runs roughly east-west across southern California, north of Mojave.
+    "Garlock":     [(-119.30, 35.20), (-118.20, 35.15), (-117.10, 35.10),
+                    (-116.00, 35.10)],
+}
+
+# Real California outline (simplified) — loaded from data/california.json so
+# the map does not depend on any external CDN.
+_CA_DATA_PATH = os.path.join(os.path.dirname(__file__), '..', 'data',
+                             'california.json')
+with open(os.path.abspath(_CA_DATA_PATH)) as _f:
+    _CA_POLYGONS = json.load(_f)['polygons']
+
+
+def _study_region_map():
+    fig = go.Figure()
+
+    fig.add_shape(type="rect", xref="paper", yref="paper",
+                  x0=0, x1=1, y0=0, y1=1,
+                  fillcolor="#dceaf4", line_width=0, layer="below")
+
+    for ring in _CA_POLYGONS:
+        xs = [p[0] for p in ring]
+        ys = [p[1] for p in ring]
+        fig.add_trace(go.Scatter(
+            x=xs, y=ys, mode="lines",
+            fill="toself", fillcolor="#f5efe1",
+            line=dict(color="#5a5a5a", width=1.2),
+            hoverinfo="skip", showlegend=False,
+        ))
+
+    for name, pts in _FAULTS.items():
+        xs, ys = zip(*pts)
+        fig.add_trace(go.Scatter(
+            x=xs, y=ys, mode="lines",
+            line=dict(color="#8b1a1a", width=2, dash="dash"),
+            hovertemplate=f"{name} fault<extra></extra>",
+            showlegend=False,
+        ))
+
+    fig.add_trace(go.Scatter(
+        x=[r["lon"] for r in STUDY_REGIONS],
+        y=[r["lat"] for r in STUDY_REGIONS],
+        mode="markers+text",
+        marker=dict(size=16, color="#d62728",
+                    line=dict(width=2.5, color="white")),
+        text=[r["name"] for r in STUDY_REGIONS],
+        # Per-marker offset so the Mojave label does not crowd Carrizo Plain.
+        textposition=["middle right", "middle left", "middle right"],
+        textfont=dict(size=13, color="#1a1a1a"),
+        hovertext=[f"<b>{r['name']}</b><br>{r['blurb']}" for r in STUDY_REGIONS],
+        hoverinfo="text",
+        showlegend=False,
+        cliponaxis=False,
+    ))
+
+    fig.update_xaxes(range=[-125.0, -113.5], visible=False)
+    fig.update_yaxes(range=[32.0, 42.5], visible=False,
+                     scaleanchor="x", scaleratio=1.25)
+    fig.update_layout(
+        margin=dict(l=0, r=0, t=0, b=0),
+        height=500,
+        plot_bgcolor="#dceaf4",
+        paper_bgcolor="#dceaf4",
+        hoverlabel=dict(bgcolor="white", font_size=13),
+    )
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# Copy
 # ---------------------------------------------------------------------------
 HERO_TITLE = "Detecting Active Faults"
-HERO_TAGLINE = "Fine-tuning a satellite foundation model to map California earthquake faults."
-
-HEADLINE_METRICS = [
-    {"label": "Fault IoU", "value": "0.55"},
-    {"label": "F1 (fault)", "value": "0.71"},
-    {"label": "Recall", "value": "0.71"},
-    {"label": "Boundary mIoU", "value": "0.23"},
-]
+HERO_TAGLINE = ("Fine-tuning a satellite foundation model to map "
+                "California earthquake faults.")
 
 SUMMARY_MD = """
-California has thousands of mapped active faults and likely more that have not been
-found yet. We fine-tune Prithvi-EO-2.0, a 600M parameter satellite foundation model
-from NASA and IBM, to flag fault traces directly in Sentinel-2 imagery. Our best run
-reaches a Fault IoU of 0.55 with precision and recall both around 0.71.
+California has thousands of mapped active faults and likely more that have not
+been found yet. This project fine-tunes **Prithvi-EO-2.0**, a 600M-parameter
+satellite foundation model from NASA and IBM, to flag fault traces directly in
+Sentinel-2 imagery across three study regions: the Bay Area, Carrizo Plain, and
+the Mojave Desert.
 """
 
-# ---------------------------------------------------------------------------
-# Section nav cards — appear at the bottom of the home page.
-# ---------------------------------------------------------------------------
 SECTION_CARDS = [
-    {
-        "title": "Project Objectives",
-        "blurb": "Goals, data sources, research questions, hypotheses.",
-        "href": "/objectives",
-    },
-    {
-        "title": "Analytical Methods",
-        "blurb": "Data pipeline, model architecture, training setup.",
-        "href": "/methods",
-    },
-    {
-        "title": "Major Findings",
-        "blurb": "Experiment results, threshold sweep, per-region performance.",
-        "href": "/findings",
-    },
+    {"title": "Exploratory Data Analysis",
+     "blurb": "Dataset summary, region splits, sample patches, distributions.",
+     "href": "/eda"},
+    {"title": "Analysis Methods",
+     "blurb": "Data pipeline, model architecture, training setup.",
+     "href": "/methods"},
+    {"title": "Major Findings",
+     "blurb": "Experiment results, threshold sweep, per-region performance.",
+     "href": "/findings"},
 ]
-
-
-def _metric_card(label, value):
-    return dbc.Card(
-        dbc.CardBody([
-            html.Div(value, className="display-6 fw-bold text-primary"),
-            html.Div(label, className="text-muted small"),
-        ]),
-        className="text-center h-100 shadow-sm",
-    )
 
 
 def _section_card(title, blurb, href):
@@ -72,22 +137,29 @@ layout = dbc.Container([
     # Hero
     html.Div([
         html.H1(HERO_TITLE, className="display-4 fw-bold mb-3"),
-        html.P(HERO_TAGLINE, className="lead mb-2"),
+        html.P(HERO_TAGLINE, className="lead mb-0"),
     ], className="py-5"),
 
-    # Headline metric strip
-    dbc.Row(
-        [dbc.Col(_metric_card(m["label"], m["value"]), md=3) for m in HEADLINE_METRICS],
-        className="g-3 mb-5",
-    ),
-
-    # Summary block
+    # Project summary
     html.Div([
-        html.H3("Project at a Glance", className="mb-3"),
-        dcc.Markdown(SUMMARY_MD, className="lead"),
+        html.H3("Project Summary", className="mb-3"),
+        dcc.Markdown(SUMMARY_MD),
     ], className="mb-5"),
 
-    # Section nav
+    # Study-region map
+    html.Div([
+        html.H3("Study Regions", className="mb-3"),
+        dcc.Graph(figure=_study_region_map(),
+                  config={"displayModeBar": False}),
+        html.P(
+            "Three California regions — Bay Area, Carrizo Plain, and Mojave — "
+            "covering roughly 300 km² of labeled fault terrain. Hover a marker "
+            "for region notes.",
+            className="text-muted small text-center mt-2",
+        ),
+    ], className="mb-5"),
+
+    # Explore links
     html.H3("Explore", className="mb-3"),
     dbc.Row(
         [dbc.Col(_section_card(**c), md=4) for c in SECTION_CARDS],
