@@ -1,10 +1,9 @@
-import json
-import os
-
 import dash
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
+
+from cloud_io import load_json
 
 dash.register_page(__name__, path='/', name='Home')
 
@@ -30,12 +29,10 @@ _FAULTS = {
                     (-116.00, 35.10)],
 }
 
-# Real California outline (simplified) — loaded from data/california.json so
-# the map does not depend on any external CDN.
-_CA_DATA_PATH = os.path.join(os.path.dirname(__file__), '..', 'data',
-                             'california.json')
-with open(os.path.abspath(_CA_DATA_PATH)) as _f:
-    _CA_POLYGONS = json.load(_f)['polygons']
+# Real California outline (simplified). At runtime we try
+# gs://cs163-fault-data-carter/site/california.json and fall back to the
+# bundled copy under data/ so the site still works offline.
+_CA_POLYGONS = load_json("site/california.json", "data/california.json")["polygons"]
 
 
 def _study_region_map():

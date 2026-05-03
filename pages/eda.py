@@ -1,33 +1,41 @@
+from collections import Counter
+
 import dash
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 
+import cloud_io
+from cloud_io import gcs_uri, load_json, load_text
+
 dash.register_page(__name__, path='/eda', name='EDA')
 
 # ---------------------------------------------------------------------------
-# Dataset facts (mirrored from contextOfProject/patches/dataset_info.json
-# and counted from the splits/*.txt files).
+# Dataset facts loaded from GCS at startup, with a local fallback.
+#   gs://cs163-fault-data-carter/dataset/dataset_info.json
+#   gs://cs163-fault-data-carter/dataset/splits/{train,val,test}.txt
 # ---------------------------------------------------------------------------
-DATASET_INFO = {
-    "total_patches": 4207,
-    "train_patches": 2944,
-    "val_patches": 631,
-    "test_patches": 632,
-    "patch_size": 128,
-    "stride": 64,
-    "min_fault_frac": 0.005,
-    "num_bands": 6,
-    "bands": ["Blue", "Green", "Red", "NIR", "SWIR1", "SWIR2"],
-    "regions": ["bay_area", "carrizo", "mojave"],
-}
+DATASET_INFO = load_json(
+    "dataset/dataset_info.json",
+    "contextOfProject/patches/dataset_info.json",
+)
 
-# Patch counts per region per split — counted directly from splits/*.txt.
-REGION_SPLIT_COUNTS = {
-    "train": {"mojave": 1514, "bay_area": 1054, "carrizo": 376},
-    "val":   {"mojave": 311,  "bay_area": 233,  "carrizo": 87},
-    "test":  {"mojave": 316,  "bay_area": 248,  "carrizo": 68},
-}
+
+def _split_counts():
+    """Count patches per region per split, reading the split lists from GCS."""
+    counts = {}
+    for split in ("train", "val", "test"):
+        names = load_text(
+            f"dataset/splits/{split}.txt",
+            f"contextOfProject/patches/splits/{split}.txt",
+        ).split()
+        counts[split] = dict(Counter(n.split("_r")[0] for n in names))
+    return counts
+
+
+REGION_SPLIT_COUNTS = _split_counts()
+# Snapshot which source actually served the data (gcs / local) — used in the UI.
+DATA_SOURCE = cloud_io.GCS_SOURCE
 
 REGIONS = ["bay_area", "carrizo", "mojave"]
 SPLIT_COLORS = {"train": "#1f77b4", "val": "#ff7f0e", "test": "#2ca02c"}
@@ -182,6 +190,14 @@ layout = dbc.Container([
             "and what we did to keep the labels usable.",
             className="lead text-muted",
         ),
+        html.Div([
+            dbc.Badge(
+                f"Data source: {DATA_SOURCE.upper()}",
+                color="success" if DATA_SOURCE == "gcs" else "secondary",
+                className="me-2",
+            ),
+            html.Code(gcs_uri("dataset/")),
+        ], className="small mb-2"),
     ], className="py-4"),
 
     _section("Dataset Summary",
