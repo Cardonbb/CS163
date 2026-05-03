@@ -109,13 +109,13 @@ the Mojave Desert.
 """
 
 GOAL_MD = """
-Build a model that takes a Sentinel-2 image and returns a per-pixel prediction
-of whether each pixel sits on an active fault. The point is to help geologists
-narrow down where to look in the field, not to replace them. California has
-more than 15,000 km of mapped active faults, and the 2019 Ridgecrest earthquake
-happened on a fault that was not fully mapped beforehand — a faster screening
-tool means more candidate faults get a second look before the next earthquake
-reveals them.
+Build a model that looks at Sentinel-2 satellite images and predicts which
+pixels are likely part of an active fault. The goal is not to replace
+geologists, but to give them a better starting point when deciding where to
+investigate. California has over 15,000 km of mapped active faults, and the
+2019 Ridgecrest earthquake showed that some important faults are still not
+fully mapped. A faster screening tool could help flag more possible fault
+areas before they become obvious through a major earthquake.
 """
 
 RESEARCH_QUESTIONS = [
