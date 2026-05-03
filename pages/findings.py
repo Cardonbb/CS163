@@ -105,24 +105,30 @@ at 0.71, which is the operating point we wanted.
 """
 
 KEY_FINDINGS = [
-    ("One variable at a time wins.",
-     "Experiment 2 changed loss, weights, augmentation, and batch size all at "
-     "once and regressed. Experiment 3 changed only the augmentation set and "
-     "gave the biggest jump in the project."),
-    ("Rotation augmentation matters more than loss tweaks.",
-     "Faults have no preferred orientation, so flips alone leave the model "
-     "blind to two of the four cardinal directions. Adding 90/180/270° "
-     "rotations improved Fault IoU by 22 points."),
-    ("Boundary mIoU tracks visual quality better than pixel accuracy.",
-     "Pixel accuracy was already 0.90 at baseline because the dataset is "
-     "98.8% background. Boundary mIoU jumped from 0.05 to 0.23 between "
-     "Exp 1 and Exp 3, which actually reflects the predictions now "
-     "following linear traces."),
-    ("Carrizo Plain is the easiest region; Mojave is the hardest.",
-     "Carrizo IoU = 0.70, Bay Area = 0.64, Mojave = 0.59. Carrizo's "
-     "exposed San Andreas trace has high contrast against the surrounding "
-     "rock; Mojave's desert pavement looks similar to fault scarps in "
-     "places."),
+    ("H1 — Fine-tuning Prithvi learns real fault patterns. Confirmed.",
+     "The pretrained backbone alone produced near-empty masks before "
+     "fine-tuning. After fine-tuning on the ~4,200 labeled patches, the best "
+     "checkpoint reached Fault IoU = 0.55 and F1 = 0.71, with predictions "
+     "that visibly track narrow linear traces (see Qualitative Results). "
+     "The model is learning fault structure, not memorising background."),
+    ("H2 — Rotation augmentation beats flips alone. Strongly confirmed.",
+     "Holding everything else constant, swapping the augmentation set from "
+     "flips-only (Exp 1) to flips + 90/180/270° rotations (Exp 3) moved "
+     "Fault IoU from 0.33 to 0.55, a 22-point gain from a single config "
+     "change. Boundary mIoU jumped from 0.05 to 0.23, meaning predictions "
+     "are following actual fault lines instead of painting blobs."),
+    ("H3 — Performance varies by region, clearer terrain wins. Confirmed.",
+     "On the held-out test set the order matches the hypothesis exactly: "
+     "Carrizo Plain IoU 0.70 > Bay Area 0.64 > Mojave 0.59. Carrizo's "
+     "exposed San Andreas trace gives the model high contrast to lock onto, "
+     "while Mojave's desert pavement and dry-wash patterns produce more "
+     "false positives."),
+    ("Bonus — change one variable at a time.",
+     "Experiment 2 changed loss, class weights, augmentation, and batch "
+     "size all at once and regressed below baseline (IoU 0.19). The "
+     "single-variable Experiment 3 then delivered the biggest gain in the "
+     "project. Worth surfacing because it shaped how we ran every later "
+     "ablation."),
 ]
 
 LIMITATIONS_MD = """

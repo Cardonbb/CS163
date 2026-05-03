@@ -17,3 +17,9 @@
 __pycache__/
 # Ignored by the build system
 /setup.cfg
+
+# Local-only project research artifacts — not needed at runtime
+contextOfProject/
+cloud_data/
+.DS_Store
+*.pyc

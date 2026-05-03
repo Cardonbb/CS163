@@ -108,6 +108,28 @@ Sentinel-2 imagery across three study regions: the Bay Area, Carrizo Plain, and
 the Mojave Desert.
 """
 
+GOAL_MD = """
+Build a model that takes a Sentinel-2 image and returns a per-pixel prediction
+of whether each pixel sits on an active fault. The point is to help geologists
+narrow down where to look in the field, not to replace them. California has
+more than 15,000 km of mapped active faults, and the 2019 Ridgecrest earthquake
+happened on a fault that was not fully mapped beforehand — a faster screening
+tool means more candidate faults get a second look before the next earthquake
+reveals them.
+"""
+
+RESEARCH_QUESTIONS = [
+    "Can a pretrained satellite foundation model learn fault signatures from a small labeled dataset?",
+    "Which augmentation matters most when fault traces run at every angle?",
+    "How well does a model trained on three California regions generalize to terrain it has never seen?",
+]
+
+HYPOTHESES = [
+    "Fine-tuning Prithvi-EO-2.0 on our ~4,200 labeled patches should help the model learn real fault patterns, not just guess from the raw satellite image.",
+    "Rotation augmentation should help more than flips alone because faults can run in many different directions.",
+    "Performance will likely differ by region. Clearer terrain, such as Carrizo Plain, should be easier for the model, while more visually noisy areas, such as the Mojave Desert, may create more false positives.",
+]
+
 SECTION_CARDS = [
     {"title": "Exploratory Data Analysis",
      "blurb": "Dataset summary, region splits, sample patches, distributions.",
@@ -144,6 +166,22 @@ layout = dbc.Container([
     html.Div([
         html.H3("Project Summary", className="mb-3"),
         dcc.Markdown(SUMMARY_MD),
+    ], className="mb-5"),
+
+    # Project goals + research questions + hypotheses
+    html.Div([
+        html.H3("Project Goals", className="mb-3"),
+        dcc.Markdown(GOAL_MD),
+        dbc.Row([
+            dbc.Col([
+                html.H5("Research Questions", className="mt-3"),
+                html.Ol([html.Li(q) for q in RESEARCH_QUESTIONS]),
+            ], md=6),
+            dbc.Col([
+                html.H5("Hypotheses", className="mt-3"),
+                html.Ul([html.Li(h) for h in HYPOTHESES]),
+            ], md=6),
+        ], className="g-3"),
     ], className="mb-5"),
 
     # Study-region map
