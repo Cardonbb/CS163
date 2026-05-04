@@ -195,19 +195,17 @@ LIMITATIONS_MD = """
 """
 
 FUTURE_MD = """
-1. **Train longer:** Experiment 3 peaked at epoch 77 out of 80, so it probably hadn't fully converged.
-   Training to 120 epochs could squeeze out more performance.
-2. **Add an elevation model branch:** Train a second model on 1-meter LiDAR DEM data
+1. **Add an elevation model branch:** Train a second model on 1-meter LiDAR DEM data
    (hillshade, slope, aspect, roughness) to detect faults from elevation alone.
-3. **Combine optical and elevation:** Fuse the Sentinel-2 model and DEM model at the feature level.
+2. **Combine optical and elevation:** Fuse the Sentinel-2 model and DEM model at the feature level.
    Roads are flat in elevation while fault scarps have a clear topographic signature, so combining
    the two should reduce false positives.
-4. **Have geologists review the errors:** A lot of what looks like a false positive to the model
+3. **Have geologists review the errors:** A lot of what looks like a false positive to the model
    might actually be an unmapped fault. Having domain experts go through the misclassifications
    would help separate real errors from label gaps.
-5. **Try a topology-aware loss:** clDice computes overlap along the fault centerline skeleton
+4. **Try a topology-aware loss:** clDice computes overlap along the fault centerline skeleton
    rather than the buffered zone. That's a better fit for thin linear features and worth testing.
-6. **Run it on all of California:** Apply the trained model statewide at 10 m resolution to
+5. **Run it on all of California:** Apply the trained model statewide at 10 m resolution to
    generate a candidate fault list for geologist review.
 """
 
