@@ -17,7 +17,7 @@ dash.register_page(__name__, path='/eda', name='EDA')
 # ---------------------------------------------------------------------------
 DATASET_INFO = load_json(
     "dataset/dataset_info.json",
-    "contextOfProject/patches/dataset_info.json",
+    "data/dataset_info.json",
 )
 
 
@@ -27,7 +27,7 @@ def _split_counts():
     for split in ("train", "val", "test"):
         names = load_text(
             f"dataset/splits/{split}.txt",
-            f"contextOfProject/patches/splits/{split}.txt",
+            f"data/splits/{split}.txt",
         ).split()
         counts[split] = dict(Counter(n.split("_r")[0] for n in names))
     return counts
@@ -41,11 +41,12 @@ REGIONS = ["bay_area", "carrizo", "mojave"]
 SPLIT_COLORS = {"train": "#1f77b4", "val": "#ff7f0e", "test": "#2ca02c"}
 
 SUMMARY_BULLETS = [
-    "4,207 image / label patches at 128×128 pixels, drawn from three California regions.",
-    "Sentinel-2 imagery, 6 surface-reflectance bands (Blue, Green, Red, NIR, SWIR1, SWIR2) at 10 m resolution.",
-    "Pixel labels are USGS Quaternary Fault and Fold traces, buffered 50 m on each side and rasterized.",
-    "Patches were chipped with a sliding window at stride 64 and filtered to keep only those with at least 0.5% fault pixels.",
-    "Split into train (2,944) / val (631) / test (632) by spatial chunks so nearby patches do not leak across splits.",
+    "4,207 image / label patches at 128×128 pixels, drawn from three California regions: Bay Area, Carrizo Plain, and Mojave Desert.",
+    "Sentinel-2 Level-2A cloud-free median composites generated via Google Earth Engine from June 2022 – September 2023. Summer months maximize soil and rock exposure in California's dry climate. Cloud masking used the SCL band to remove cloud shadow, medium/high probability cloud, and cirrus.",
+    "6 surface-reflectance bands at 10 m resolution: Blue (B2) and Green (B3) capture visible color; Red (B4) detects rock/soil contrasts; NIR (B8) encodes vegetation health anomalies along fault zones; SWIR1 (B11) and SWIR2 (B12) are the most geologically diagnostic — clay minerals from fault-zone hydrothermal alteration have characteristic shortwave infrared absorption features invisible to the human eye.",
+    "Pixel labels derived from the USGS Quaternary Fault and Fold Database, filtered to Historic, Latest Quaternary, and Late Quaternary faults. Fault vectors buffered 50 m on each side and rasterized to create ~100 m wide binary fault zones.",
+    "Patches chipped with a 64-pixel (50%) stride sliding window. Filtered to remove patches with >50% NoData pixels and patches with <0.5% fault pixels. 8.9% overall retention rate.",
+    "Split into train (2,943) / val (630) / test (634) by spatial chunks so nearby patches do not leak across splits.",
 ]
 
 PREVIEW_FILES = [
@@ -137,9 +138,46 @@ def _bands_bar():
 
 def _section(heading, *body):
     return html.Div([
-        html.H2(heading, className="mt-5 mb-3"),
+        html.H2(heading, className="mt-4 mb-3"),
         *body,
     ])
+
+
+def _image_dimensions_table():
+    rows = [
+        ("Carrizo Plain", "6,580", "6,861", "65.8 km × 68.6 km"),
+        ("Mojave Desert", "9,781", "8,421", "97.8 km × 84.2 km"),
+        ("Bay Area",      "8,882", "7,862", "88.8 km × 78.6 km"),
+    ]
+    header = html.Thead(html.Tr([
+        html.Th("Region"), html.Th("Width (px)"),
+        html.Th("Height (px)"), html.Th("Coverage Area"),
+    ]))
+    body = html.Tbody([
+        html.Tr([html.Td(r[0]), html.Td(r[1]), html.Td(r[2]), html.Td(r[3])])
+        for r in rows
+    ])
+    return dbc.Table([header, body], bordered=True, striped=True,
+                     hover=True, size="sm")
+
+
+def _fault_mask_table():
+    rows = [
+        ("Carrizo Plain", "45,139,980", "278,455",  "0.62%", "648"),
+        ("Mojave Desert", "82,278,801", "951,347",  "1.16%", "3,856"),
+        ("Bay Area",      "69,828,484", "527,369",  "0.76%", "1,108"),
+    ]
+    header = html.Thead(html.Tr([
+        html.Th("Region"), html.Th("Total Pixels"), html.Th("Fault Pixels"),
+        html.Th("Fault %"), html.Th("Fault Segments"),
+    ]))
+    body = html.Tbody([
+        html.Tr([html.Td(r[0]), html.Td(r[1]), html.Td(r[2]),
+                 html.Td(html.Strong(r[3])), html.Td(r[4])])
+        for r in rows
+    ])
+    return dbc.Table([header, body], bordered=True, striped=True,
+                     hover=True, size="sm")
 
 
 def _stats_table():
@@ -190,10 +228,26 @@ layout = dbc.Container([
             "and what we did to keep the labels usable.",
             className="lead text-muted",
         ),
-    ], className="py-4"),
+    ], className="pt-4 pb-2"),
 
     _section("Dataset Summary",
              html.Ul([html.Li(b) for b in SUMMARY_BULLETS])),
+
+    _section("Satellite Image Dimensions",
+             html.P(
+                 "Cloud-free Sentinel-2 median composites generated via Google Earth Engine "
+                 "from June 2022 – September 2023. Exported at 10 m resolution in UTM Zone 10N.",
+                 className="text-muted small",
+             ),
+             _image_dimensions_table()),
+
+    _section("Fault Mask Statistics",
+             html.P(
+                 "Fault pixels are less than 1.2% of total pixels in every region — "
+                 "severe class imbalance that requires weighted loss during training.",
+                 className="text-muted small",
+             ),
+             _fault_mask_table()),
 
     _section("Dataset Statistics", _stats_table()),
 
@@ -227,28 +281,86 @@ layout = dbc.Container([
     ),
 
     _section(
-        "Sample Predictions on Held-out Test Patches",
+        "California Fault Map",
+        dbc.Row([
+            dbc.Col(
+                html.Img(
+                    src=dash.get_asset_url("eda_pics/california_faults_filtered.png"),
+                    className="img-fluid rounded shadow-sm",
+                ),
+                md=5,
+            ),
+            dbc.Col([
+                html.H5("California Fault Map", className="mb-3"),
+                html.P(
+                    "The USGS Quaternary Fault and Fold Database catalogs all known "
+                    "active faults in the United States. For this project we filtered "
+                    "the database down to three age categories:"
+                ),
+                html.Ul([
+                    html.Li([html.Strong("Historic — "), "faults that have ruptured within recorded history."]),
+                    html.Li([html.Strong("Latest Quaternary — "), "faults that ruptured within the last 15,000 years."]),
+                    html.Li([html.Strong("Late Quaternary — "), "faults that ruptured within the last 130,000 years."]),
+                ]),
+                html.P(
+                    "This filtering retained 55,497 fault segments across California. "
+                    "These are the faults most likely to produce future earthquakes "
+                    "and therefore the most important for seismic hazard modeling.",
+                    className="mt-2",
+                ),
+            ], md=7),
+        ], className="g-4 align-items-center"),
+    ),
+
+    _section(
+        "Region Previews — Sentinel-2 RGB + Fault Overlay",
         html.P(
-            "Six randomly chosen test tiles. Top: Sentinel-2 RGB input. "
-            "Middle: USGS ground-truth fault traces (50 m buffer). "
-            "Bottom: model prediction at threshold 0.65.",
+            "Left column: Sentinel-2 RGB composite. Right column: USGS fault "
+            "traces (50 m buffer) overlaid in red.",
+            className="text-muted small mb-3",
+        ),
+        dbc.Row([
+            dbc.Col([
+                html.Div("Bay Area", className="fw-semibold text-center mb-1"),
+                html.Img(src=dash.get_asset_url("eda_pics/bay_area_mask_preview.png"),
+                         className="img-fluid rounded shadow-sm"),
+            ], md=4),
+            dbc.Col([
+                html.Div("Carrizo Plain", className="fw-semibold text-center mb-1"),
+                html.Img(src=dash.get_asset_url("eda_pics/carrizo_mask_preview.png"),
+                         className="img-fluid rounded shadow-sm"),
+            ], md=4),
+            dbc.Col([
+                html.Div("Mojave Desert", className="fw-semibold text-center mb-1"),
+                html.Img(src=dash.get_asset_url("eda_pics/mojave_mask_preview.png"),
+                         className="img-fluid rounded shadow-sm"),
+            ], md=4),
+        ], className="g-3"),
+    ),
+
+    _section(
+        "Sample Patches",
+        html.P(
+            "128×128 px patches sampled from the dataset. Each patch covers "
+            "1.28 km × 1.28 km of terrain.",
             className="text-muted small",
         ),
+        html.Img(
+            src=dash.get_asset_url("eda_pics/sample_patches.png"),
+            className="img-fluid rounded shadow-sm",
+        ),
         html.Div([
-            html.Div([
-                html.Div("Sentinel-2 RGB",
-                         className="fw-semibold text-end pe-2"),
-                html.Div("Ground Truth",
-                         className="fw-semibold text-end pe-2"),
-                html.Div("Model Prediction",
-                         className="fw-semibold text-end pe-2"),
-            ], style={"display": "flex", "flexDirection": "column",
-                       "justifyContent": "space-around",
-                       "minWidth": "140px", "fontSize": "0.95rem"}),
-            html.Img(src=dash.get_asset_url("test_predictions_cropped.png"),
-                     className="img-fluid rounded shadow-sm",
-                     style={"flex": "1 1 auto", "minWidth": 0}),
-        ], className="d-flex align-items-stretch"),
+            html.H6("Why the 50 m buffer?", className="mt-4 mb-2 fw-semibold"),
+            html.P(
+                "Fault traces in the USGS database are thin vector lines. At 10 m "
+                "satellite resolution a single-pixel line provides almost no training "
+                "signal. We buffer each fault 50 m on each side, creating a ~100 m wide "
+                "fault zone in the binary mask. This increases labeled fault pixels for "
+                "the model to learn from and accommodates positional uncertainty between "
+                "the USGS database and the satellite imagery.",
+                className="text-muted small",
+            ),
+        ]),
     ),
 
     html.Div(className="py-5"),
