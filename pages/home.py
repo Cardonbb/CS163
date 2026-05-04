@@ -110,12 +110,12 @@ def _study_region_map():
 # ---------------------------------------------------------------------------
 # Copy
 # ---------------------------------------------------------------------------
-HERO_TITLE = "FaultFinder"
+HERO_TITLE = "Detecting Active Faults"
 HERO_TAGLINE = ("Fine-tuning a geospatial foundation model to detect active "
                 "earthquake faults in Sentinel-2 satellite imagery.")
 
 SUMMARY_MD = """
-FaultFinder fine-tunes **Prithvi-EO 2.0**, a 600M-parameter Vision Transformer
+We fine-tuned **Prithvi-EO 2.0**, a 600M-parameter Vision Transformer
 pretrained by IBM and NASA, to perform binary segmentation of active fault traces
 in Sentinel-2 imagery. We built a data pipeline and generated a dataset of 4,207 paired 128×128
 image-mask patches from three environmentally diverse California regions. The best model
