@@ -12,11 +12,11 @@ dash.register_page(__name__, path='/', name='Home')
 # ---------------------------------------------------------------------------
 STUDY_REGIONS = [
     {"name": "Bay Area",      "lat": 37.55, "lon": -122.05,
-     "blurb": "Hayward & San Andreas traces"},
+     "blurb": "Hayward & Calaveras faults — urban/oak woodland, hardest environment"},
     {"name": "Carrizo Plain", "lat": 35.18, "lon": -119.80,
-     "blurb": "Classic San Andreas exposure"},
+     "blurb": "Central San Andreas — textbook fault geomorphology"},
     {"name": "Mojave",        "lat": 34.70, "lon": -116.20,
-     "blurb": "Garlock & ECSZ faults"},
+     "blurb": "S. San Andreas & Mojave faults — arid desert, scarps highly visible"},
 ]
 
 _FAULTS = {
@@ -24,10 +24,17 @@ _FAULTS = {
                     (-120.70, 36.10), (-119.85, 35.20), (-118.90, 34.65),
                     (-117.40, 34.10), (-116.30, 33.75), (-115.80, 33.40)],
     "Hayward":     [(-122.30, 38.05), (-122.10, 37.75), (-121.85, 37.45)],
-    # Garlock — runs roughly east-west across southern California, north of Mojave.
+    "Calaveras":   [(-121.80, 37.60), (-121.60, 37.20), (-121.40, 36.80)],
     "Garlock":     [(-119.30, 35.20), (-118.20, 35.15), (-117.10, 35.10),
                     (-116.00, 35.10)],
 }
+
+# Study region bounding boxes from report Table 1
+_REGION_BOXES = [
+    {"name": "Bay Area",      "x0": -122.5, "x1": -121.5, "y0": 37.5, "y1": 38.2, "color": "#1f77b4"},
+    {"name": "Carrizo Plain", "x0": -120.2, "x1": -119.5, "y0": 35.0, "y1": 35.6, "color": "#2ca02c"},
+    {"name": "Mojave",        "x0": -116.5, "x1": -115.5, "y0": 33.8, "y1": 34.5, "color": "#ff7f0e"},
+]
 
 # Real California outline (simplified). At runtime we try
 # gs://cs163-fault-data-carter/site/california.json and fall back to the
@@ -35,13 +42,23 @@ _FAULTS = {
 _CA_POLYGONS = load_json("site/california.json", "data/california.json")["polygons"]
 
 
+_FAULT_COLORS = {
+    "San Andreas": "#8b1a1a",
+    "Hayward":     "#c0392b",
+    "Calaveras":   "#e67e22",
+    "Garlock":     "#6c3483",
+}
+
+
 def _study_region_map():
     fig = go.Figure()
 
+    # Ocean background
     fig.add_shape(type="rect", xref="paper", yref="paper",
                   x0=0, x1=1, y0=0, y1=1,
                   fillcolor="#dceaf4", line_width=0, layer="below")
 
+    # California outline
     for ring in _CA_POLYGONS:
         xs = [p[0] for p in ring]
         ys = [p[1] for p in ring]
@@ -52,40 +69,40 @@ def _study_region_map():
             hoverinfo="skip", showlegend=False,
         ))
 
-    for name, pts in _FAULTS.items():
-        xs, ys = zip(*pts)
+    # Study region markers
+    for i, r in enumerate(STUDY_REGIONS):
+        box = _REGION_BOXES[i]
         fig.add_trace(go.Scatter(
-            x=xs, y=ys, mode="lines",
-            line=dict(color="#8b1a1a", width=2, dash="dash"),
-            hovertemplate=f"{name} fault<extra></extra>",
+            x=[r["lon"]], y=[r["lat"]],
+            mode="markers+text",
+            name=r["name"],
+            marker=dict(size=18, color=box["color"],
+                        symbol="star", line=dict(width=1.5, color="white")),
+            text=[r["name"]],
+            textposition=["middle right", "middle left", "middle right"][i],
+            textfont=dict(size=13, color="#1a1a1a", family="Arial Black"),
+            hovertext=f"<b>{r['name']}</b><br>{r['blurb']}",
+            hoverinfo="text",
             showlegend=False,
         ))
-
-    fig.add_trace(go.Scatter(
-        x=[r["lon"] for r in STUDY_REGIONS],
-        y=[r["lat"] for r in STUDY_REGIONS],
-        mode="markers+text",
-        marker=dict(size=16, color="#d62728",
-                    line=dict(width=2.5, color="white")),
-        text=[r["name"] for r in STUDY_REGIONS],
-        # Per-marker offset so the Mojave label does not crowd Carrizo Plain.
-        textposition=["middle right", "middle left", "middle right"],
-        textfont=dict(size=13, color="#1a1a1a"),
-        hovertext=[f"<b>{r['name']}</b><br>{r['blurb']}" for r in STUDY_REGIONS],
-        hoverinfo="text",
-        showlegend=False,
-        cliponaxis=False,
-    ))
 
     fig.update_xaxes(range=[-125.0, -113.5], visible=False)
     fig.update_yaxes(range=[32.0, 42.5], visible=False,
                      scaleanchor="x", scaleratio=1.25)
     fig.update_layout(
         margin=dict(l=0, r=0, t=0, b=0),
-        height=500,
+        height=520,
         plot_bgcolor="#dceaf4",
         paper_bgcolor="#dceaf4",
         hoverlabel=dict(bgcolor="white", font_size=13),
+        legend=dict(
+            bgcolor="rgba(255,255,255,0.85)",
+            bordercolor="#cccccc",
+            borderwidth=1,
+            font=dict(size=12),
+            x=0.01, y=0.99,
+            xanchor="left", yanchor="top",
+        ),
     )
     return fig
 
@@ -93,38 +110,41 @@ def _study_region_map():
 # ---------------------------------------------------------------------------
 # Copy
 # ---------------------------------------------------------------------------
-HERO_TITLE = "Detecting Active Faults"
-HERO_TAGLINE = ("Fine-tuning a satellite foundation model to map "
-                "California earthquake faults.")
+HERO_TITLE = "FaultFinder"
+HERO_TAGLINE = ("Fine-tuning a geospatial foundation model to detect active "
+                "earthquake faults in Sentinel-2 satellite imagery.")
 
 SUMMARY_MD = """
-California has thousands of mapped active faults and likely more that have not
-been found yet. This project fine-tunes **Prithvi-EO-2.0**, a 600M-parameter
-satellite foundation model from NASA and IBM, to flag fault traces directly in
-Sentinel-2 imagery across three study regions: the Bay Area, Carrizo Plain, and
-the Mojave Desert.
+FaultFinder fine-tunes **Prithvi-EO 2.0**, a 600M-parameter Vision Transformer
+pretrained by IBM and NASA, to perform binary segmentation of active fault traces
+in Sentinel-2 imagery. We built a data pipeline and generated a dataset of 4,207 paired 128×128
+image-mask patches from three environmentally diverse California regions. The best model
+achieves Fault IoU 0.5523, F1 0.7116, and mIoU 0.7473. This project relies on optical imagery and 
+focusing on using 6 bands of Sentinel-2 imagery to detect active fault traces.
 """
 
 GOAL_MD = """
-Build a model that looks at Sentinel-2 satellite images and predicts which
-pixels are likely part of an active fault. The goal is not to replace
-geologists, but to give them a better starting point when deciding where to
-investigate. California has over 15,000 km of mapped active faults, and the
-2019 Ridgecrest earthquake showed that some important faults are still not
-fully mapped. A faster screening tool could help flag more possible fault
-areas before they become obvious through a major earthquake.
+Earthquakes are one of the most costly natural hazards globally. In California alone, we 
+can see most earthquakes are in the San Francisco Bay Area. Accurate seismic
+hazard models depend critically on fault geometry, a fault not on the map cannot
+be assessed for risk. The 2019 Mw 7.1 Ridgecrest earthquake ruptured a fault
+network where only 35% of surface rupture traces had been previously mapped,
+causing ~$4 billion in damage. Geologist have many unmapped active faults and inaccurate mappings as well. 
+If they can find more active faults, they can assess seismic hazard more accurately. The goal is not to replace
+geologists, but to give them a faster starting point for identifying candidate faults
+before a major earthquake makes them obvious.
 """
 
 RESEARCH_QUESTIONS = [
-    "Can a pretrained satellite foundation model learn fault signatures from a small labeled dataset?",
-    "Which augmentation matters most when fault traces run at every angle?",
-    "How well does a model trained on three California regions generalize to terrain it has never seen?",
+    "Can a pretrained geospatial foundation model learn fault signatures from a small labeled dataset of ~4,200 patches?",
+    "Which augmentation strategy matters most when fault traces run at every orientation?",
+    "Does Dice loss improve or degrade performance on buffered linear fault labels?",
 ]
 
 HYPOTHESES = [
-    "Fine-tuning Prithvi-EO-2.0 on our ~4,200 labeled patches should help the model learn real fault patterns, not just guess from the raw satellite image.",
-    "Rotation augmentation should help more than flips alone because faults can run in many different directions.",
-    "Performance will likely differ by region. Clearer terrain, such as Carrizo Plain, should be easier for the model, while more visually noisy areas, such as the Mojave Desert, may create more false positives.",
+    "Fine-tuning Prithvi-EO 2.0 on labeled patches will produce fault representations that are more accurate and reliable.",
+    "Rotation augmentation will outperform flips alone because geological faults have no preferred orientation and Prithvi's positional encodings hard-code directional bias from north-up pretraining.",
+    "Dice loss will underperform weighted cross-entropy due to its region-size bias against the 50-meter buffered linear labels used as ground truth.",
 ]
 
 SECTION_CARDS = [

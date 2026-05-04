@@ -6,7 +6,7 @@ app = Dash(
     __name__,
     use_pages=True,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
-    title="Detecting Active Faults",
+    title="FaultFinder",
 )
 server = app.server
 
@@ -21,7 +21,7 @@ def _ordered_pages():
     return ordered + extras
 
 navbar = dbc.NavbarSimple(
-    brand="Detecting Active Faults",
+    brand="FaultFinder",
     brand_href="/",
     color="dark",
     dark=True,
