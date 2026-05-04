@@ -1,0 +1,12 @@
+{
+  "total_patches": 4207,
+  "train_patches": 2943,
+  "val_patches": 630,
+  "test_patches": 634,
+  "patch_size": 128,
+  "stride": 64,
+  "min_fault_frac": 0.005,
+  "num_bands": 6,
+  "bands": ["Blue", "Green", "Red", "NIR", "SWIR1", "SWIR2"],
+  "regions": ["bay_area", "carrizo", "mojave"]
+}
