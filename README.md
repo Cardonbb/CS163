@@ -117,8 +117,4 @@ Default binary threshold: **0.65** (tuned on test set). Lower to 0.3 for explora
 - Road networks and agricultural field boundaries cause systematic false positives in optical imagery alone — LiDAR DEM fusion (planned) is expected to resolve this
 - Predictions are 100-meter-wide fault zones; centerline extraction requires post-processing skeletonization
 
-## Citation
 
-If you use this work, please cite the project report:
-
-> FaultFinder: Active Fault Detection from Sentinel-2 Imagery using Prithvi-EO 2.0. CS163, UC Santa Cruz, 2025.
