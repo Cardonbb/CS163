@@ -174,7 +174,7 @@ The website reads from GCS at runtime via `cloud_io.py`, which tries the GCS buc
 ---
 
 ## Dataset
-
+Dataset generation repo is in: https://github.com/wesleykieu/detecting-active-faults
 Three California training regions covering diverse environments:
 
 | Region | Environment | Key Faults | Patches |
