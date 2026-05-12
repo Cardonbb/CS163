@@ -26,6 +26,7 @@ Three California training regions covering diverse environments:
 | Bay Area | Urban/oak woodland | Hayward, Calaveras | 1,535 |
 
 Labels are derived from the USGS Quaternary Fault and Fold Database, buffered 50 m (5 px) to 100-meter-wide fault zones. Total: 4,207 patches (70/15/15 train/val/test split stratified by region).
+Dataset Generation Codebase: https://github.com/wesleykieu/detecting-active-faults
 
 ## Key Findings
 
